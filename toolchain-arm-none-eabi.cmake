@@ -59,14 +59,14 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set(OBJECT_GEN_FLAGS "-O0 -mthumb -fno-builtin -Wall -ffunction-sections -fdata-sections -fomit-frame-pointer -mabi=aapcs")
 
 set(CMAKE_C_FLAGS   "${OBJECT_GEN_FLAGS} -std=gnu99 " CACHE INTERNAL "C Compiler options")
-set(CMAKE_CXX_FLAGS "${OBJECT_GEN_FLAGS} -std=c++11 " CACHE INTERNAL "C++ Compiler options")
+set(CMAKE_CXX_FLAGS "${OBJECT_GEN_FLAGS} -std=c++17 " CACHE INTERNAL "C++ Compiler options")
 set(CMAKE_ASM_FLAGS "${OBJECT_GEN_FLAGS} -x assembler-with-cpp " CACHE INTERNAL "ASM Compiler options")
 
 
 # -Wl,--gc-sections     Perform the dead code elimination.
 # --specs=nano.specs    Link with newlib-nano.
 # --specs=nosys.specs   No syscalls, provide empty implementations for the POSIX system calls.
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections --specs=nano.specs --specs=nosys.specs -mthumb -mabi=aapcs -Wl,-Map=${CMAKE_PROJECT_NAME}.map" CACHE INTERNAL "Linker options")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections,--print-memory-usage  --specs=nano.specs --specs=nosys.specs -mthumb -mabi=aapcs -Wl,-Map=${CMAKE_PROJECT_NAME}.map" CACHE INTERNAL "Linker options")
 
 #---------------------------------------------------------------------------------------
 # Set debug/release build configuration Options
@@ -95,6 +95,9 @@ set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-flto" CACHE INTERNAL "Linker options for re
 set(CMAKE_C_COMPILER ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-gcc${TOOLCHAIN_EXT} CACHE INTERNAL "C Compiler")
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-g++${TOOLCHAIN_EXT} CACHE INTERNAL "C++ Compiler")
 set(CMAKE_ASM_COMPILER ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-gcc${TOOLCHAIN_EXT} CACHE INTERNAL "ASM Compiler")
+set(CMAKE_OBJCOPY ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-objcopy${TOOLCHAIN_EXT} CACHE INTERNAL "OBJ Copy")
+set(CMAKE_OBJDUMP ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-objdump${TOOLCHAIN_EXT} CACHE INTERNAL "OBJ Dump")
+set(CMAKE_ELF_SIZE ${TOOLCHAIN_BIN_DIR}/${TOOLCHAIN}-size${TOOLCHAIN_EXT} CACHE INTERNAL "ARM ELF Size")
 
 set(CMAKE_FIND_ROOT_PATH ${TOOLCHAIN_PREFIX}/${${TOOLCHAIN}} ${CMAKE_PREFIX_PATH})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -102,3 +105,63 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
+macro(add_embedded_arm_executable target_name)
+
+	# define file names we will be using
+    set(elf_file  ${target_name}-${MCU_NAME}.elf)
+    set(size_file ${target_name}-${MCU_NAME}.size)
+	set(map_file  ${target_name}-${MCU_NAME}.map)
+	set(hex_file  ${target_name}-${MCU_NAME}.hex)
+    set(lst_file  ${target_name}-${MCU_NAME}.lst)
+    set(dis_file  ${target_name}-${MCU_NAME}.dis)
+    
+    add_executable(${target_name} ${ARGN})
+    set_target_properties(
+        ${target_name} 
+        PROPERTIES 
+        OUTPUT_NAME "${target_name}-${MCU_NAME}"
+        SUFFIX ".elf"
+    )
+
+	# create hex file
+	add_custom_command(
+		OUTPUT ${hex_file}
+		COMMAND
+			${CMAKE_OBJCOPY} -O ihex -R .eeprom ${elf_file} ${hex_file}
+
+		DEPENDS ${elf_file}
+    )
+    
+    # generate the dis file
+	add_custom_command(
+		OUTPUT ${dis_file}
+
+		COMMAND
+			${CMAKE_OBJDUMP} -d -x ${elf_file} > ${dis_file}
+
+		DEPENDS ${elf_file}
+    )
+    
+    # generate the lst file
+	add_custom_command(
+		OUTPUT ${lst_file}
+
+		COMMAND
+			${CMAKE_OBJDUMP} -d -S -C ${elf_file} > ${lst_file}
+
+		DEPENDS ${elf_file}
+    )
+
+    add_custom_command(
+		OUTPUT ${size_file}
+		COMMAND ${CMAKE_ELF_SIZE} ${elf_file}
+        COMMAND ${CMAKE_ELF_SIZE} ${elf_file} > ${size_file}
+		DEPENDS ${elf_file}
+    )
+    
+    add_custom_target(
+		${target_name}-dump
+		ALL
+		DEPENDS ${hex_file} ${lst_file} ${size_file}
+	)
+endmacro(add_embedded_arm_executable)
