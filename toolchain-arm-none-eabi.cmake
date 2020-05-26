@@ -106,14 +106,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 macro(add_embedded_arm_executable target_name)
-
-	# define file names we will be using
-    set(elf_file  ${target_name}-${MCU_NAME}.elf)
-    set(size_file ${target_name}-${MCU_NAME}.size)
-	set(map_file  ${target_name}-${MCU_NAME}.map)
-	set(hex_file  ${target_name}-${MCU_NAME}.hex)
-    set(lst_file  ${target_name}-${MCU_NAME}.lst)
-    set(dis_file  ${target_name}-${MCU_NAME}.dis)
     
     add_executable(${target_name} ${ARGN})
     set_target_properties(
@@ -123,13 +115,23 @@ macro(add_embedded_arm_executable target_name)
         SUFFIX ".elf"
     )
 
+    set(output_path ${CMAKE_RUNTIME_OUTPUT_DIRECTORY${${CMAKE_BUILD_TYPE}}})
+
+	# define file names we will be using
+    set(elf_file  ${output_path}/${target_name}-${MCU_NAME}.elf)
+    set(size_file ${output_path}/${target_name}-${MCU_NAME}.size)
+	set(map_file  ${output_path}/${target_name}-${MCU_NAME}.map)
+	set(hex_file  ${output_path}/${target_name}-${MCU_NAME}.hex)
+    set(lst_file  ${output_path}/${target_name}-${MCU_NAME}.lst)
+    set(dis_file  ${output_path}/${target_name}-${MCU_NAME}.dis)
+    
 	# create hex file
 	add_custom_command(
 		OUTPUT ${hex_file}
 		COMMAND
 			${CMAKE_OBJCOPY} -O ihex -R .eeprom ${elf_file} ${hex_file}
 
-		DEPENDS ${elf_file}
+		DEPENDS ${target_name}
     )
     
     # generate the dis file
