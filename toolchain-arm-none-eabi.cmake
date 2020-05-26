@@ -105,7 +105,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-macro(add_embedded_arm_executable target_name)
+function(add_embedded_arm_executable target_name)
     
     add_executable(${target_name} ${ARGN})
     set_target_properties(
@@ -163,4 +163,4 @@ macro(add_embedded_arm_executable target_name)
 		ALL
 		DEPENDS ${hex_file} ${lst_file} ${size_file}
 	)
-endmacro(add_embedded_arm_executable)
+endfunction(add_embedded_arm_executable)
