@@ -6,7 +6,7 @@
 ## Teensy 4.0 target specific CMake file
 ##
 
-set(MCU_NAME "TEENSY40")
+set(MCU_NAME "imxrt1062")
 
 if(NOT DEFINED LINKER_SCRIPT)
     message(FATAL_ERROR "No linker script defined")
