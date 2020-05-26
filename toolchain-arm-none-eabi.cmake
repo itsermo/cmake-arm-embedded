@@ -66,7 +66,7 @@ set(CMAKE_ASM_FLAGS "${OBJECT_GEN_FLAGS} -x assembler-with-cpp " CACHE INTERNAL 
 # -Wl,--gc-sections     Perform the dead code elimination.
 # --specs=nano.specs    Link with newlib-nano.
 # --specs=nosys.specs   No syscalls, provide empty implementations for the POSIX system calls.
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections,--print-memory-usage  --specs=nano.specs --specs=nosys.specs -mthumb -mabi=aapcs -Wl,-Map=${CMAKE_PROJECT_NAME}.map" CACHE INTERNAL "Linker options")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections --specs=nano.specs --specs=nosys.specs -mthumb -mabi=aapcs -Wl,-Map=${CMAKE_PROJECT_NAME}.map" CACHE INTERNAL "Linker options")
 
 #---------------------------------------------------------------------------------------
 # Set debug/release build configuration Options
@@ -124,43 +124,26 @@ function(add_embedded_arm_executable target_name)
     
 	# create hex file
 	add_custom_command(
-		OUTPUT ${hex_file}
-		COMMAND
-			${CMAKE_OBJCOPY} -O ihex -R .eeprom ${elf_file} ${hex_file}
-
-		DEPENDS ${target_name}
+        TARGET ${target_name} POST_BUILD
+		COMMAND ${CMAKE_OBJCOPY} -O ihex -R .eeprom ${elf_file} ${hex_file}
     )
     
     # generate the dis file
 	add_custom_command(
-		OUTPUT ${dis_file}
-
-		COMMAND
-			${CMAKE_OBJDUMP} -d -x ${elf_file} > ${dis_file}
-
-		DEPENDS ${elf_file}
+        TARGET ${target_name} POST_BUILD
+		COMMAND ${CMAKE_OBJDUMP} -d -x ${elf_file} > ${dis_file}
     )
     
     # generate the lst file
 	add_custom_command(
-		OUTPUT ${lst_file}
-
-		COMMAND
-			${CMAKE_OBJDUMP} -d -S -C ${elf_file} > ${lst_file}
-
-		DEPENDS ${elf_file}
+        TARGET ${target_name} POST_BUILD
+		COMMAND ${CMAKE_OBJDUMP} -d -S -C ${elf_file} > ${lst_file}
     )
 
+    # get and print the size
     add_custom_command(
-		OUTPUT ${size_file}
+        TARGET ${target_name} POST_BUILD
 		COMMAND ${CMAKE_ELF_SIZE} ${elf_file}
         COMMAND ${CMAKE_ELF_SIZE} ${elf_file} > ${size_file}
-		DEPENDS ${elf_file}
     )
-    
-    add_custom_target(
-		${target_name}-dump
-		ALL
-		DEPENDS ${hex_file} ${lst_file} ${size_file}
-	)
 endfunction(add_embedded_arm_executable)

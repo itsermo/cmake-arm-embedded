@@ -29,4 +29,9 @@ set(CMAKE_CXX_FLAGS "-fno-unwind-tables -fno-exceptions -fpermissive -fno-rtti -
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} ${OBJECT_GEN_FLAGS}" CACHE INTERNAL "ASM Compiler options")
 
 # Linker flags
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -T${LINKER_SCRIPT}" CACHE INTERNAL "Linker options")
+if(PRINT_SIZE_INFO_AFTER_LINK)
+    set(CMAKE_EXE_LINKER_PRINT_FLAGS "-Wl,--print-memory-usage")
+endif()
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_PRINT_FLAGS} -mthumb -mcpu=cortex-m7 -mfloat-abi=hard -mfpu=fpv5-d16 -T${LINKER_SCRIPT}" CACHE INTERNAL "Linker options")
+
